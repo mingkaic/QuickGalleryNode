@@ -1,0 +1,36 @@
+======================================
+				Proposal
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+Quick Gallery is an online web service that allows users to view, upload, and share images.
+Each image is titled and described by a user. Multiple users can comment on that image.
+The system categorizes images and videos using image processing.
+
+(Detailed Map system)
+In the future, Gallery encourages location mapping to images.
+Images will hopefully be used as visual indicators to assist travelers of logistic information, such as how often the buses arrive, which door in a building gets to a certain room the fastest. In door maps not accessible easily anywhere else.
+
+======================================
+				Requirements
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+The web application must be callable from an android mobile application that also supports tablet.
+The web API can range from Node/Express JS to Spring.io (Ideally, JS web servers serve to alleviate Java server's computational and data pressures).
+
+======================================
+				Design
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+Objectives
+
+Key Scenerios
+
+Application Overview
+
+Key Issues
+
+Solutions
+
+Architecture
+
+
+======================================
+				Testing
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
