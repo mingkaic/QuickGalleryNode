@@ -1,76 +1,63 @@
 // standard variables
 var express = require('express');
 var http = require('http');
-var socketio = require('socket.io');
-
 var path = require('path');
-// var async = require('async');
+var socket = require('socket.io');
+var sstream = require('socket.io-stream');
 
 // file serving
 var fs = require('fs');
 
+// express server setup
 var router = express();
 var server = http.createServer(router);
-//var io = socketio.listen(server);
-
-var bodyParser = require('body-parser');
-router.use(bodyParser.json());
 
 // send client
 router.use(express.static(path.resolve(__dirname, 'client')));
 
-var sockets = [];
-var users = ['micky mouse', 'daphne duck', 'howard the cat'];
-/*
-// socket connection
+// image objects
+var images = require('./imageCenter');
+
+// socket setup
+var io = socket(server);
 io.on('connection', function (socket) {
-  // connected
-  console.log('ready');
-  socket.emit('server ready');
-  
-  sockets.push(socket);
-  
-  // disconnect handler
-  socket.on('disconnect', function () {
-    sockets.splice(sockets.indexOf(socket), 1); // remove from socket array
-    // handle data
-  });
+	console.log('got a client?'); // which client?
+	
+	for (var imageIndex = 0; imageIndex < images.length; imageIndex++) {
+		// streaming documents one at a time to client
+		var imageStream = sstream.createStream(); // new stream
+		sstream(socket).emit('uImages', imageStream);
+		
+		var imgObj = images[imageIndex];
+		
+		imageStream.push(imgObj.url+'-data:'+imgObj.type+';base64,');
+		
+		// base64 stream!!! <<
+		fs.createReadStream('uploads/'+imgObj.url).pipe(imageStream);
+	}
 
-  // additional calls
-  socket.on('identify', function(name) {
-    console.log(name);
-    users.push(name);
-  });
+	socket.emit('news', { hello: 'world' });
+	
+	// getting streamed doc from client
+	sstream(socket).on('foo', function(stream) {
+		stream.pipe(fs.createWriteStream('foo.txt'));
+	});
+	
+	socket.on('my other event', function (data) {
+		console.log(data);
+	});
   
-});*/
-
-var method = function (something) {
-  console.log(something);
-  something = something.body;
-  console.log(something);
-};
-
-// RESTful HTTP connection
-router.get('/images', function(req, res, next) {
-  console.log("requested");
-  // get images
-  fs.readFile('test.png', function(err, data) {
-    var new64 = new Buffer(data).toString('base64');
-    res.json('data:image/png;base64,'+new64); // serialize for consumption
-  });
+    socket.on('disconnect', function (msg) {
+    	console.log('lost connection to a client?'); // to fix: which client?
+    });
 });
 
-router.get('/users', function(req, res, next) {
-  // pass back user names
-  res.json(users);
-});
+// RESTful HTTP connections: great for single files, terrible for multi
+var rest = require('./rest');
+router.use(rest);
 
-router.post('/', function(req, res, next) {
-  method(req);
-  return res.json(null);
-});
-
+// listen
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
-  var addr = server.address();
-  console.log("Server listening at ", addr.address + ":" + addr.port);
+	var addr = server.address();
+	console.log("Server listening at ", addr.address + ":" + addr.port);
 });

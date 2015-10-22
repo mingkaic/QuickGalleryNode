@@ -1,30 +1,88 @@
 (function() {
-  angular.module("QG", []).controller("masterController", ["$scope", "$http", function($scope, $http) {
-    console.log('controller active');
+    angular
+    .module('QG', ['angularFileUpload'])
+    .controller('masterController', ["$scope", "$http", 'FileUploader', function($scope, $http, FileUploader) {
+        var uploader = $scope.uploader = new FileUploader({url: "https://node-quick-gallery-mkaichen.c9.io/images"});
+        $scope.imageSrcs = [];
     
-    $scope.imageSrcs = [];
+        // socket
+        var socket = io.connect();
+        socket.on('news', function (data) {
+            console.log(data);
+            socket.emit('my other event', { my: 'data' });
+        });
     
-    // RESTful consumption
-    $http.get('/images').success(function(response) {
-      console.log(response);
-      // obtain raw image data from response
-      if (null !== response) {
-        // serve the image
-        $scope.imageSrcs.push(response);
-      }
-    });
+        // RESTful consumption
+        $http.get('/images').success(function(response) {
+            // obtain raw image data from response
+            if (null !== response) {
+                // strip away the unique file identifier
+                var base64Data = response.substring(response.indexOf('-')+1);
+                // serve the image
+                $scope.imageSrcs.push(base64Data);
+            }
+        });
     
-    /*var socket = io();
-    $scope.name = '';
-    
-    socket.on('connect', function () {
-      console.log('connected');
-      $scope.setName();
-    });
+        // FILTERS
 
-    $scope.setName = function setName() {
-      console.log($scope.name);
-      socket.emit('identify', $scope.name);
-    };*/
-  }]);
+        uploader.filters.push({
+            name: 'customFilter',
+            fn: function(item /*{File|FileLikeObject}*/, options) {
+                return this.queue.length < 10;
+            }
+        });
+
+        // CALLBACKS
+
+        uploader.onWhenAddingFileFailed = function(item /*{File|FileLikeObject}*/, filter, options) {
+            console.info('onWhenAddingFileFailed', item, filter, options);
+        };
+        uploader.onAfterAddingFile = function(fileItem) {
+            console.info('onAfterAddingFile', fileItem);
+        };
+        uploader.onAfterAddingAll = function(addedFileItems) {
+            console.info('onAfterAddingAll', addedFileItems);
+        };
+        uploader.onBeforeUploadItem = function(item) {
+            console.info('onBeforeUploadItem', item);
+        };
+        uploader.onProgressItem = function(fileItem, progress) {
+            console.info('onProgressItem', fileItem, progress);
+        };
+        uploader.onProgressAll = function(progress) {
+            console.info('onProgressAll', progress);
+        };
+        uploader.onSuccessItem = function(fileItem, response, status, headers) {
+            console.info('onSuccessItem', fileItem, response, status, headers);
+        };
+        uploader.onErrorItem = function(fileItem, response, status, headers) {
+            console.info('onErrorItem', fileItem, response, status, headers);
+        };
+        uploader.onCancelItem = function(fileItem, response, status, headers) {
+            console.info('onCancelItem', fileItem, response, status, headers);
+        };
+        uploader.onCompleteItem = function(fileItem, response, status, headers) {
+            console.info('onCompleteItem', fileItem, response, status, headers);
+        };
+        uploader.onCompleteAll = function() {
+            console.info('onCompleteAll');
+        };
+
+        console.info('uploader', uploader);
+    
+        /*$scope.uploadImage = function() {
+            $scope.fileSelected = function(files) {
+                if (files && files.length) {
+                    $scope.file = files[0];
+                }
+             
+                FileUploader.upload({
+                    url: "/upload",
+                    file: $scope.file
+                }) .success(function(data) {
+                    console.log(data, 'uploaded');
+                });
+            };
+        }*/
+    }]);
 })();
