@@ -16,7 +16,7 @@ var server = http.createServer(router);
 router.use(express.static(path.resolve(__dirname, 'client')));
 
 // image objects
-var images = require('./imageCenter');
+var images = require('./imageCenter').getInstance().peek();
 
 // socket setup
 var io = socket(server);

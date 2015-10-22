@@ -9,6 +9,9 @@ var mmm = require('mmmagic');
 var bodyParser = require('body-parser');
 var multipart = require('connect-multiparty');
 
+// imageCenter
+var imageCenter = require('./imageCenter');
+
 router.use(bodyParser.json());
 
 // reusable mime type detector
@@ -40,12 +43,13 @@ router.post('/images', multipartMiddleware, function(req, res) {
 	var fOutPath = 'uploads/'+fname;
 	
 	// guarantee proper file typing (no tiffs or jpegs)
-	
+	var type = "image/png";
 	
 	// file checking done! start writing
 	fs.createReadStream(fInPath).pipe(fs.createWriteStream(fOutPath));
+	imageCenter.getInstance().add(fname, type);
 
 	res.json(null);
 });
 
-module.exports(router);
+module.exports = router;

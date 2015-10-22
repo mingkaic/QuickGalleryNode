@@ -69,20 +69,5 @@
         };
 
         console.info('uploader', uploader);
-    
-        /*$scope.uploadImage = function() {
-            $scope.fileSelected = function(files) {
-                if (files && files.length) {
-                    $scope.file = files[0];
-                }
-             
-                FileUploader.upload({
-                    url: "/upload",
-                    file: $scope.file
-                }) .success(function(data) {
-                    console.log(data, 'uploaded');
-                });
-            };
-        }*/
     }]);
 })();
