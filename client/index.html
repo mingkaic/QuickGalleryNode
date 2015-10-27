@@ -16,17 +16,69 @@
                     </div>
                 </div>
             </div>
-            
-            <div id='uploader'>
+
+            <div>
                 Upload File:
-                <form ng-submit="uploader.uploadAll()">
-                    <input type="file" nv-file-select="" uploader="uploader">
-				    <input type="submit">
-                </form>
+                <input type="file" nv-file-select="" uploader="uploader" multiple /><br/>
+
+                Drag File:
+                <div ng-show="uploader.isHTML5">
+                    <div nv-file-drop class="well my-drop-zone" uploader="uploader">
+                        drop zone
+                    </div>
+                </div>
             </div>
-            
-            <div ng-repeat="imageSrc in imageSrcs">
-                <img ng-src="{{imageSrc}}" />
+
+            <div>
+                <h3>Upload queue</h3>
+                <p>Queue length: {{ uploader.queue.length }}</p>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th width="50%">Name</th>
+                            <th ng-show="uploader.isHTML5">Size</th>
+                            <th ng-show="uploader.isHTML5">Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="item in uploader.queue">
+                            <td><strong>{{ item.file.name }}</strong></td>
+                            <td ng-show="uploader.isHTML5" nowrap>{{ item.file.size/1024/1024|number:2 }} MB</td>
+                            <td ng-show="uploader.isHTML5">
+                                <div class="progress" style="margin-bottom: 0;">
+                                    <div class="progress-bar" role="progressbar" ng-style="{ 'width': item.progress + '%' }"></div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span ng-show="item.isSuccess"><i class="glyphicon glyphicon-ok"></i></span>
+                                <span ng-show="item.isCancel"><i class="glyphicon glyphicon-ban-circle"></i></span>
+                                <span ng-show="item.isError"><i class="glyphicon glyphicon-remove"></i></span>
+                            </td>
+                            <td nowrap>
+                                <button type="button" class="btn btn-success btn-xs" ng-click="imageUpload(item)" ng-disabled="item.isReady || item.isUploading || item.isSuccess">
+                                    <span class="glyphicon glyphicon-upload"></span> Upload
+                                </button>
+                                <button type="button" class="btn btn-warning btn-xs" ng-click="item.cancel()" ng-disabled="!item.isUploading">
+                                    <span class="glyphicon glyphicon-ban-circle"></span> Cancel
+                                </button>
+                                <button type="button" class="btn btn-danger btn-xs" ng-click="item.remove()">
+                                    <span class="glyphicon glyphicon-trash"></span> Remove
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-success btn-xs" ng-click="imageUploadQueue()" ng-disable="!uploader.getNotUploadedItems().length"> Upload All </button>
+            </div>
+
+            <div style="padding-top: 50px">
+                <div ng-repeat="image in Images">
+                    <div class="img">
+                        <img ng-src="{{image}}" width="110" height="90"/>
+                    </div>
+                </div>
             </div>
         </div>
         <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -34,6 +86,7 @@
         <script src="/bower_components/angular/angular.min.js"></script>
         <script src="/bower_components/angular-file-upload/dist/angular-file-upload.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
+        <script src="js/delivery.js"></script>
         <script src="js/controller.js"></script>
     </body>
 </html>

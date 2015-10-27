@@ -9,11 +9,23 @@ The system categorizes images and videos using image processing.
 In the future, Gallery encourages location mapping to images.
 Images will hopefully be used as visual indicators to assist travelers of logistic information, such as how often the buses arrive, which door in a building gets to a certain room the fastest. In door maps not accessible easily anywhere else.
 
+(Lost Item System)
+Gallery also retains temporal information to compare photos taken at the same spot at different times. 
+The before photo is the last photo taken at that spot, and the after photo is the current photo that is comparing with the after photo.
+Differences should account for moved/missing items, but not obscured items and massively different angle changes.
+
+Massive angle changes is defined as any solid angle greater than 1 steradian where the origin the center of image and the center of cone is the vector between the camera in the before image and the origin.
+If the after image's camera position is outside of the 1 steradian cone, then comparison is not possible.
+The same principle applies when the camera is the origin of center and the center of cone is and the center of cone is the vector between the center of the before image and the origin
+
 ======================================
 				Requirements
 ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 The web application must be callable from an android mobile application that also supports tablet.
 The web API can range from Node/Express JS to Spring.io (Ideally, JS web servers serve to alleviate Java server's computational and data pressures).
+
+One key feature could be time comparison: Every photo needs to retain it's time and location information to be used for Lost Item System. 
+The Lost Item System should allow variations in camera angles for both the before image and the after image.
 
 ======================================
 				Design

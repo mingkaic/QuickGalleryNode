@@ -3,7 +3,8 @@ var express = require('express');
 var http = require('http');
 var path = require('path');
 var socket = require('socket.io');
-var sstream = require('socket.io-stream');
+
+var delivery = require('delivery');
 
 // file serving
 var fs = require('fs');
@@ -16,45 +17,54 @@ var server = http.createServer(router);
 router.use(express.static(path.resolve(__dirname, 'client')));
 
 // image objects
-var images = require('./imageCenter').getInstance().peek();
+var images = [];
+
+fs.readdir('uploads', function(err, fileNames) {
+	if (err) throw err;
+	images = fileNames;
+});
 
 // socket setup
 var io = socket(server);
 io.on('connection', function (socket) {
 	console.log('got a client?'); // which client?
-	
-	for (var imageIndex = 0; imageIndex < images.length; imageIndex++) {
-		// streaming documents one at a time to client
-		var imageStream = sstream.createStream(); // new stream
-		sstream(socket).emit('uImages', imageStream);
-		
-		var imgObj = images[imageIndex];
-		
-		imageStream.push(imgObj.url+'-data:'+imgObj.type+';base64,');
-		
-		// base64 stream!!! <<
-		fs.createReadStream('uploads/'+imgObj.url).pipe(imageStream);
-	}
 
-	socket.emit('news', { hello: 'world' });
-	
-	// getting streamed doc from client
-	sstream(socket).on('foo', function(stream) {
-		stream.pipe(fs.createWriteStream('foo.txt'));
+	var deliverable = delivery.listen(socket);
+
+	// downloading images to client
+	deliverable.on('delivery.connect',function(deliverable){
+		for (var i = 0; i < images.length; i++) {
+			deliverable.send({
+				name: images[i],
+				path: 'uploads/'+images[i]
+			});
+		}
 	});
-	
-	socket.on('my other event', function (data) {
-		console.log(data);
+
+	deliverable.on('send.success',function(file){
+		console.log('File successfully sent to client!'); // which file?
 	});
-  
+
+	// uploading  from client
+	deliverable.on('receive.success',function(file){
+		if (images.indexOf(file.name) < 0) { // avoid dups
+			fs.writeFile('uploads/'+file.name, file.buffer, function(err){
+				if(err) console.log('File could not be saved.');
+				console.log('File saved.');
+
+				images.push(file.name);
+				deliverable.send({
+					name: file.name,
+					path: 'uploads/'+file.name
+				});
+			});
+		}
+	});
+
     socket.on('disconnect', function (msg) {
     	console.log('lost connection to a client?'); // to fix: which client?
     });
 });
-
-// RESTful HTTP connections: great for single files, terrible for multi
-var rest = require('./rest');
-router.use(rest);
 
 // listen
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
