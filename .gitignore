@@ -31,3 +31,9 @@ Thumbs.db
 ##########
 .c9/
 .git/
+
+# Mongodb #
+###########
+/data
+mongod
+/uploads/*

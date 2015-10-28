@@ -4,25 +4,43 @@ var http = require('http');
 var path = require('path');
 var socket = require('socket.io');
 
+// dealing with files
 var delivery = require('delivery');
-
-// file serving
 var fs = require('fs');
 
 // express server setup
 var router = express();
 var server = http.createServer(router);
 
+var mongoServices = require('./mongo-services');
+
 // send client
 router.use(express.static(path.resolve(__dirname, 'client')));
 
-// image objects
+// image names
 var images = [];
 
-fs.readdir('uploads', function(err, fileNames) {
-	if (err) throw err;
-	images = fileNames;
-});
+// mongo client initial connection
+try {
+	mongoServices.init(function() {
+		fs.readdir('uploads', function(err, fileNames) {
+			if (err) throw err;
+			images.concat(fileNames);
+		});
+		
+		mongoServices.getFilesFromMongo(function(files) {
+			files.forEach(function(file) {
+				if (images.indexOf(file.filename) < 0) {
+					images.push(file.filename);
+					mongoServices.readingFromMongo(file.filename); // download from mongo here
+				}
+			}); // get all files in images
+		});
+	});
+} catch (err) {
+	console.log(err);
+	console.log('WARNING: mongo unavailable');
+}
 
 // socket setup
 var io = socket(server);
@@ -50,6 +68,7 @@ io.on('connection', function (socket) {
 		if (images.indexOf(file.name) < 0) { // avoid dups
 			fs.writeFile('uploads/'+file.name, file.buffer, function(err){
 				if(err) console.log('File could not be saved.');
+
 				console.log('File saved.');
 
 				images.push(file.name);
@@ -57,9 +76,30 @@ io.on('connection', function (socket) {
 					name: file.name,
 					path: 'uploads/'+file.name
 				});
+				
+				try {
+					mongoServices.writeToMongo(file.name);
+				} catch(err) {
+					console.log(err);
+				}
 			});
 		}
 	});
+
+	socket.on('deleteFile', function(data) {
+		console.log('trying to delete '+data.name);
+		// clear from images
+		var index = images.indexOf(data.name);
+		if (index > -1)
+			images.splice(index, 1);
+			
+		// remove from buffer directory
+		fs.unlink('uploads/'+data.name, function(err) {
+			if (err) console.log(err);
+		});
+		// remove from mongo
+		mongoServices.deleteFromMongo(data.name);
+	})
 
     socket.on('disconnect', function (msg) {
     	console.log('lost connection to a client?'); // to fix: which client?

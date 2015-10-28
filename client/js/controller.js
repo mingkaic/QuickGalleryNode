@@ -4,7 +4,7 @@
     .controller('masterController', ["$scope", "$http", 'FileUploader', function($scope, $http, FileUploader) {
         $scope.uploader = new FileUploader();
 
-        $scope.Images = [];
+        $scope.ImageFiles = [];
 
         $scope.image = null;
         $scope.imageFileName = '';
@@ -26,21 +26,31 @@
                 // populate images
                 delivery.on('receive.success',function(file){
                     if (file.isImage()) {
-                        $scope.Images.push(file.dataURL());
+                        $scope.ImageFiles.push(file);
                         $scope.$apply();
                     }
                 });
 
                 // upload to server
                 $scope.imageUpload = function(imageItem) {
-                    var file = imageItem._file;
-                    delivery.send(file);
+                    delivery.send(imageItem._file);
                     imageItem.remove();
                 };
-
+                
+                $scope.deleteThis = function(imagefile) {
+                    socket.emit('deleteFile', {name: imagefile.name});
+                    var index = $scope.ImageFiles.indexOf(imagefile);
+                    if (index > -1)
+                        $scope.ImageFiles.splice(index, 1);
+                };
+                
+                // multiple deliveries must be spawned (but can't because delivery is singleton)
+                // ISSUE: delivery.send may block other deliveries from sending as all process are done on a single thread resulting in no uploads
                 $scope.imageUploadQueue = function() {
-                    while (0 < $scope.uploader.queue.length) {
-                        $scope.imageUpload($scope.uploader.queue[0]);
+                    if ($scope.uploader.queue.length > 0) {
+                        var imageItem = $scope.uploader.queue[0];
+                        $scope.imageUpload(imageItem);
+                        delivery.on('send.success', $scope.imageUploadQueue); // recurse
                     }
                 }
             });
