@@ -2,11 +2,13 @@
 var express = require('express');
 var http = require('http');
 var path = require('path');
-var socket = require('socket.io');
+var socketIo = require('socket.io');
 
-// dealing with files
-var delivery = require('delivery');
-var fs = require('fs');
+// dealing with files and streams
+var base64 = require('base64-stream');
+var concatStream = require('concat-stream');
+var fs = require('fs'); // great for testing streams
+var socketStream = require('socket.io-stream');
 
 // express server setup
 var router = express();
@@ -19,22 +21,19 @@ router.use(express.static(path.resolve(__dirname, 'client')));
 
 // image names
 var images = [];
+Array.prototype.indexOfDupName = function(compareName) {
+	for (var i = 0; i < this.length; i++)
+		if (typeof this[i].filename !== "undefined" && this[i].filename === compareName)
+			return i;
+	return -1;
+};
 
 // mongo client initial connection
 try {
 	mongoServices.init(function() {
-		fs.readdir('uploads', function(err, fileNames) {
-			if (err) throw err;
-			images.concat(fileNames);
-		});
-		
 		mongoServices.getFilesFromMongo(function(files) {
-			files.forEach(function(file) {
-				if (images.indexOf(file.filename) < 0) {
-					images.push(file.filename);
-					mongoServices.readingFromMongo(file.filename); // download from mongo here
-				}
-			}); // get all files in images
+			console.log(files);
+			images = files;
 		});
 	});
 } catch (err) {
@@ -43,63 +42,60 @@ try {
 }
 
 // socket setup
-var io = socket(server);
+var io = socketIo(server);
 io.on('connection', function (socket) {
 	console.log('got a client?'); // which client?
 
-	var deliverable = delivery.listen(socket);
-
-	// downloading images to client
-	deliverable.on('delivery.connect',function(deliverable){
-		for (var i = 0; i < images.length; i++) {
-			deliverable.send({
-				name: images[i],
-				path: 'uploads/'+images[i]
-			});
+	// socket stream for direct access with mongo server
+	socketStream(socket).on('imageUpload', function(instream, file) {
+		console.log(file);
+		if (images.indexOfDupName(file.filename) < 0) { // avoid dups
+			console.log("no dups");
+			// save directly to mongo
+			try {
+				mongoServices.writeToMongo({ "filename": file.filename, "content_type": file.contentType, "aliases": file.aliases }, instream, function() {
+					sendImage(file);
+				});
+			} catch(err) {
+				console.log(err);
+			}
+			
+			 images.push(file); // only send files that are images
 		}
 	});
 
-	deliverable.on('send.success',function(file){
-		console.log('File successfully sent to client!'); // which file?
-	});
-
-	// uploading  from client
-	deliverable.on('receive.success',function(file){
-		if (images.indexOf(file.name) < 0) { // avoid dups
-			fs.writeFile('uploads/'+file.name, file.buffer, function(err){
-				if(err) console.log('File could not be saved.');
-
-				console.log('File saved.');
-
-				images.push(file.name);
-				deliverable.send({
-					name: file.name,
-					path: 'uploads/'+file.name
+	// downloading to client using socket emit
+	// stream is first encoded into base64 then concatenated into string format (probably easier vice versa...)
+	function sendImage(file) {
+		if (file.contentType.indexOf('image') > -1) {
+	        try { // a lot can go wrong here
+				var instream = mongoServices.readFromMongo(file.filename); // get directly from mongo
+		        var stringStream = concatStream({ encoding: "string" }, function(imageData) { // imageData is a string
+					console.log('sending to client');
+					socket.emit('imageDownload', {filename: file.filename, dataURL: 'data:'+file.contentType+';base64,'+imageData, contentType: "image/jpg"});
 				});
 				
-				try {
-					mongoServices.writeToMongo(file.name);
-				} catch(err) {
-					console.log(err);
-				}
-			});
+				instream.pipe(base64.encode()).pipe(stringStream); // ensure base64 encoding first
+			} catch(err) {
+				console.log(err);
+			}
 		}
-	});
+	}
 
-	socket.on('deleteFile', function(data) {
-		console.log('trying to delete '+data.name);
+	for (var i = 0; i < images.length; i++) {
+		sendImage(images[i]); // using uploads buffer directory
+	}
+
+	socket.on('deleteFile', function(imageFile) {
+		console.log('trying to delete '+imageFile.filename);
 		// clear from images
-		var index = images.indexOf(data.name);
+		var index = images.indexOfDupName(imageFile.filename);
 		if (index > -1)
 			images.splice(index, 1);
-			
-		// remove from buffer directory
-		fs.unlink('uploads/'+data.name, function(err) {
-			if (err) console.log(err);
-		});
+		
 		// remove from mongo
-		mongoServices.deleteFromMongo(data.name);
-	})
+		mongoServices.deleteFromMongo(imageFile.filename);
+	});
 
     socket.on('disconnect', function (msg) {
     	console.log('lost connection to a client?'); // to fix: which client?

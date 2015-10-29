@@ -1,4 +1,4 @@
-Welcome to Quick Gallery
+Welcome to Quick Gallery on Cloud9
 
 This web application obtains and serves image multiple files via socket.io
 

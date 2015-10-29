@@ -1,6 +1,7 @@
 var fs = require("fs");
 var mongo = require("mongodb");
 var Grid = require("gridfs-stream");
+var stream = require('stream');
 
 var mongoUrl = process.env.MONGOLAB_URI || 'mongodb://mkaichen-node_quick_gallery-2012840/uploadfiles' || 'mongodb://localhost/uploadfiles';
 
@@ -11,31 +12,27 @@ module.exports.init = function(callback) {
 		var gridfs = Grid(db, mongo);
 
 		// streaming to gridfs
-		module.exports.writeToMongo = function (filename, instream) {
-			if (typeof instream === "undefined")
-				instream = fs.createReadStream("uploads/"+filename);
-			
-			var gridwritestream = gridfs.createWriteStream({ filename: filename });
-			instream.pipe(gridwritestream);
-			
-			instream.on('error', function(err) { throw err; })
+		module.exports.writeToMongo = function (options, instream, cb) {
+			var gridwritestream = gridfs.createWriteStream(options);
+			instream.on('error', function(err) { throw err; });
 			gridwritestream.on('finish', function() {
 				console.log('done writing to mongo');
+				if (typeof cb === "function") cb();
 			});
+			
+			instream.pipe(gridwritestream);
 		};
 
 		// streaming from gridfs
-		module.exports.readingFromMongo = function (filename, outstream) {
-			if (typeof outstream === "undefined")
-				outstream = fs.createWriteStream("uploads/"+filename);
-			
-			var gridreadstream = gridfs.createReadStream({ filename: filename });
-			gridreadstream.pipe(outstream);
-			
-			gridreadstream.on('error', function(err) { throw err; });
-			outstream.on('finish', function() {
+		module.exports.readFromMongo = function (filename, cb) {
+			var gridReadStream = gridfs.createReadStream({ filename: filename });
+			gridReadStream.on('error', function(err) { throw err; });
+			gridReadStream.on('close'||'end', function() {
 				console.log('done reading from mongo');
+				if (typeof cb === "function") cb();
 			});
+			
+			return gridReadStream;
 		};
 
 		// delete from gridfs
