@@ -46,3 +46,10 @@ Architecture
 ======================================
 				Testing
 ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
+======================================
+				Todos
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+- Node Application + browser client (completed)
+- Spring Web Application
+- Android client
