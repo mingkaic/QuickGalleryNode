@@ -2,6 +2,14 @@ body {
     padding-top: 60px;
 }
 
+.uploadzone {
+    padding: 15px;
+}
+
+div#uploader {
+    padding-bottom: 20px;
+}
+
 div.img {
     margin: 5px;
     padding: 5px;
@@ -27,8 +35,4 @@ div.desc {
     font-weight: normal;
     width: 120px;
     margin: 5px;
-}
-
-div#uploader {
-    padding-bottom: 50px;
 }

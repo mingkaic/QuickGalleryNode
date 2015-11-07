@@ -17,6 +17,7 @@
   ],
   "dependencies": {
     "angular-file-upload": "~2.1.4",
-    "angular": "~1.4.7"
+    "angular": "~1.4.7",
+    "ng-dialog": "ngDialog#~0.5.5"
   }
 }

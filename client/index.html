@@ -5,19 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.0/css/bootstrap-responsive.min.css">
+        <link rel="stylesheet" href="bower_components/ng-dialog/css/ngDialog.min.css">
+        <link rel="stylesheet" href="bower_components/ng-dialog/css/ngDialog-theme-default.css">
+        <link rel="stylesheet" href="bower_components/ng-dialog/css/ngDialog-theme-plain.css">
+        <link rel="stylesheet" href="bower_components/ng-dialog/css/ngDialog-custom-width.css">
         <link rel="stylesheet" href="css/mystyle.css">
     </head>
     <body>
         <div class="container" ng-controller="masterController">
             <div class="navbar navbar-fixed-top navbar-inverse">
-                <div class="navbar-inner">
-                    <div class="pull-left">
-                        <p class="brand">Quick Gallery</p>
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                            <a class="navbar-brand" href='#'>Quick Gallery</a>
+                    </div>
+                    <div class="collapse navbar-collapse">
+                        <div class="nav navbar-nav navbar-right">
+                            <li class='signin'><a href="#" ng-click="openLoginDialog()">Sign in</a></li>
+                            <li class='signout'><a href="#" ng-click="openUserDialog()">{{currentUser.username}}</a></li>
+                            <li class='signout'><a href="#" ng-click="signOut()">Sign Out</a></li>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div>
+            <div class="uploadzone">
                 Upload File:
                 <input type="file" nv-file-select="" uploader="uploader" multiple /><br/>
 
@@ -74,9 +85,9 @@
             </div>
 
             <div style="padding-top: 50px">
-                <div ng-repeat="image in ImageFiles">
+                <div ng-repeat="image in ImageFiles.images">
                     <div class="img">
-                        <img ng-src="{{image.dataURL}}" ng-click="deleteThis(image)" width="110" height="90"/>
+                        <img ng-src="{{image.dataURL}}" ng-click="deleteFile(image)" width="110" height="90"/>
                     </div>
                 </div>
             </div>
@@ -85,6 +96,8 @@
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
         <script src="/bower_components/angular/angular.min.js"></script>
         <script src="/bower_components/angular-file-upload/dist/angular-file-upload.min.js"></script>
+        <script src="/bower_components/ng-dialog/js/ngDialog.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.14.3/ui-bootstrap-tpls.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script src="js/socket.io-stream.js"></script>
         <script src="js/controller.js"></script>

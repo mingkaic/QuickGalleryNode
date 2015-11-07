@@ -1,6 +1,6 @@
 ======================================
 				Proposal
-~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
 Quick Gallery is an online web service that allows users to view, upload, and share images.
 Each image is titled and described by a user. Multiple users can comment on that image.
 The system categorizes images and videos using image processing.
@@ -20,7 +20,7 @@ The same principle applies when the camera is the origin of center and the cente
 
 ======================================
 				Requirements
-~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
 The web application must be callable from an android mobile application that also supports tablet.
 The web API can range from Node/Express JS to Spring.io (Ideally, JS web servers serve to alleviate Java server's computational and data pressures).
 
@@ -29,7 +29,7 @@ The Lost Item System should allow variations in camera angles for both the befor
 
 ======================================
 				Design
-~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
 Objectives
 
 Key Scenerios
@@ -45,11 +45,30 @@ Architecture
 
 ======================================
 				Testing
-~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
+
+
 
 ======================================
 				Todos
-~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
-- Node Application + browser client (completed)
+
+- Node Application + browser client (80% completed)
+	- mongoose upgrade
+	- Account info + image permission
 - Spring Web Application
 - Android client
+
+======================================
+		Additional Considerations
+		
+- Proper user session storage (cookies, not cookies, etc.) 
+	- http://blog.modulus.io/nodejs-and-express-sessions
+	- http://stackoverflow.com/questions/15966812/user-recognition-without-cookies-or-local-storage
+- Alternative databases amongst Node, Spring, AND Android
+	- Node and Spring: http://kkovacs.eu/cassandra-vs-mongodb-vs-couchdb-vs-redis
+- Outsource or flushout own user authentication?
+	- node:
+		- https://stormpath.com/blog/choosing-nodejs-authentication-strategy/
+		- http://code.tutsplus.com/tutorials/authenticating-nodejs-applications-with-passport--cms-21619
+- Multiple or single databases?
+	- single pros: transparent, quick, easy, low complexity
+	- multiple pros: secure, extensible, data flexible

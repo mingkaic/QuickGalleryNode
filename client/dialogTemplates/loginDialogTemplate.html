@@ -1,0 +1,24 @@
+<link rel="stylesheet" href="css/loginstyle.css">
+
+<div class="container">
+    <uib-tabset>
+        <uib-tab heading="Sign In">
+            <form name="signinForm" ng-submit="signinForm.$valid && verify()" novalidate>
+                <p><input type="email" placeholder="Email" ng-model="user.email" required></p>
+                <p><input type="password" placeholder="Password" ng-model="user.password" required></p>
+                <p><input type="checkbox" ng-model="remember"> Remember me (Doesn't work right now)</p>
+                <p><input type="submit" value="Sign In"></p>
+            </form>
+            <p>Forgot your password? Click <a href="#">here</a> to reset it.</p>
+        </uib-tab>
+        <uib-tab heading="Register">
+            <form name="registerForm" ng-submit = "registerForm.$valid && register()" novalidate>
+				<p><input type="text" placeholder="Username" ng-model="user.username" required></p>
+				<p><input type="email" placeholder="Email" ng-model="user.email" required></p>
+				<p><input type="password" placeholder="Password" ng-model="user.password" required></p>
+				<p><input type="password" placeholder="Confirm Password" ng-model="confirmPassword" compare-to="user.password" required></p>
+				<p><input type="submit" value="Register"></p>
+			</form>
+        </uib-tab>
+    </uib-tabset>
+</div>
