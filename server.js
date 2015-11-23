@@ -1,8 +1,12 @@
 // standard variables
-var express = require('express');
-var http = require('http');
-var path = require('path');
-var socketIo = require('socket.io');
+var express = require('express'),
+	http = require('http'),
+	path = require('path'),
+	socketIo = require('socket.io'),
+	cookieParser = require('cookie-parser'),
+	session = require('express-session');
+
+var logger = require('morgan');
 
 // dealing with http
 var bodyParser = require('body-parser');
@@ -13,15 +17,58 @@ var concatStream = require('concat-stream');
 var socketStream = require('socket.io-stream');
 
 // express server setup
-var router = express();
-var server = http.createServer(router);
+var app = express();
+var server = http.createServer(app);
+
+// send client
+app.use(express.static(path.resolve(__dirname, 'client')));
 
 var sockets = module.exports.socketList = [];
 
+// mongo
+// uses sockets for emitting deletion notifications
 var mongoServices = require('./mongoose/mongo-services');
 
-// send client
-router.use(express.static(path.resolve(__dirname, 'client')));
+// redis
+var redisServices = require('./db/redis-services');
+
+// middleware setup
+app.use(logger('short'));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.post('/token_get', function(req, res) {
+	var token = req.body.token;
+	var received_data = req.body.data;
+	redisServices.getDataByToken(token, function(extracted_data) {
+		if (null == extracted_data) {
+			redisServices.createToken(function(token) {
+				redisServices.setTokenWithData(token, received_data);
+				res.json({token: token, data: received_data});
+			});
+		} else {
+			res.json({token: token, data: extracted_data});
+		}
+	});
+});
+
+app.post('/token_post', function(req, res) {
+	var token = req.body.token;
+	var received_data = req.body.data;
+		console.log(received_data);
+	
+	var postCb = function(token) {
+		console.log(received_data);
+		redisServices.setTokenWithData(token, received_data);
+		res.json(null);
+	};
+
+	redisServices.getDataByToken(token, function(extracted_data) {
+		console.log(extracted_data);
+		if (null == extracted_data) redisServices.createToken(postCb);
+		else postCb(token);
+	});
+});
 
 // socket setup
 var io = socketIo(server);
@@ -78,23 +125,22 @@ io.on('connection', function (socket) {
 	});
 });
 
-router.use(bodyParser.json());
-
-router.post('/userVerify', function(req, res) {
+// user information
+app.post('/userVerify', function(req, res) {
 	var user = req.body;
 	mongoServices.userExists({'email': user.email}, user.password, function(username) {
 		res.json(username);
 	});
 });
 
-router.post('/userSave', function(req, res) {
+app.post('/userSave', function(req, res) {
 	var user = req.body;
 	mongoServices.userSave({username: user.username, password: user.password, email: user.email}, function(success) {
 		res.json(success);
 	});
 });
 
-router.post('/userDelete', function(req, res) {
+app.post('/userDelete', function(req, res) {
 	var user = req.body;
 	mongoServices.userDelete({'email': user.email}, user.password, function(removed) {
 		res.json(removed);

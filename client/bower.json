@@ -13,11 +13,13 @@
     "node_modules",
     "bower_components",
     "test",
-    "tests"
+    "tests",
+    "demo"
   ],
   "dependencies": {
     "angular-file-upload": "~2.1.4",
     "angular": "~1.4.7",
-    "ng-dialog": "ngDialog#~0.5.5"
+    "ng-dialog": "ngDialog#~0.5.5",
+    "angular-local-storage": "~0.2.3"
   }
 }

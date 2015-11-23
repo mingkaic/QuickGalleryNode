@@ -40,24 +40,38 @@ function clone(obj) {
 
 var dbNom ='userImages';
 var mongoURL = process.env.MONGOLAB_URI || 'mongodb://mkaichen-node_quick_gallery-2012840/'+dbNom || 'mongodb://localhost/'+dbNom;
-
-var attemptConnection = function() {
-	mongoose.connect(mongoURL, function(err) {
-		if (err) console.log(err);
-	});
-}();
-
 var conn = mongoose.connection;
 
-conn.on('close', function() { // error or otherwise
-	console.log('mongoose offline');
+function attemptConnection(callback) {
+	mongoose.connect(mongoURL, function(err) {
+		if (err) callback(false);
+		else callback(true);
+	});
+}
+
+function closeOrError() {
+	console.log('an error has occurred. attempting to reconnect');
 	var incrementingTimer = 10; // starts at 10 seconds maxes at 120 seconds
-	setInterval(function() {
-		attemptConnection();
+	var interval = setInterval(function() {
+		console.log('attempting reconnection: '+incrementingTimer);
+		attemptConnection(function(connected) {
+			if (true == connected) 
+				interval.clearInterval();
+		});
 		if (incrementingTimer < 120) {
 			incrementingTimer += 10;
 		}
 	}, incrementingTimer*1000);
+}
+
+attemptConnection(function(connected) {
+	if (false == connected) 
+		closeOrError();
+});
+
+conn.on('close', function() { // error or otherwise
+	console.log('mongoose offline');
+	closeOrError();
 });
 
 conn.once('open', function () {
