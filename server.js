@@ -2,9 +2,7 @@
 var express = require('express'),
 	http = require('http'),
 	path = require('path'),
-	socketIo = require('socket.io'),
-	cookieParser = require('cookie-parser'),
-	session = require('express-session');
+	socketIo = require('socket.io');
 
 var logger = require('morgan');
 
@@ -25,12 +23,8 @@ app.use(express.static(path.resolve(__dirname, 'client')));
 
 var sockets = module.exports.socketList = [];
 
-// mongo
 // uses sockets for emitting deletion notifications
-var mongoServices = require('./mongoose/mongo-services');
-
-// redis
-var redisServices = require('./db/redis-services');
+var dbServices = require('./db/robust_db_layer.js');
 
 // middleware setup
 app.use(logger('short'));
@@ -40,10 +34,10 @@ app.use(bodyParser.json());
 app.post('/token_get', function(req, res) {
 	var token = req.body.token;
 	var received_data = req.body.data;
-	redisServices.getDataByToken(token, function(extracted_data) {
+	dbServices.getDataByToken(token, function(extracted_data) {
 		if (null == extracted_data) {
-			redisServices.createToken(function(token) {
-				redisServices.setTokenWithData(token, received_data);
+			dbServices.createToken(function(token) {
+				dbServices.setTokenWithData(token, received_data);
 				res.json({token: token, data: received_data});
 			});
 		} else {
@@ -55,17 +49,16 @@ app.post('/token_get', function(req, res) {
 app.post('/token_post', function(req, res) {
 	var token = req.body.token;
 	var received_data = req.body.data;
-		console.log(received_data);
 	
 	var postCb = function(token) {
 		console.log(received_data);
-		redisServices.setTokenWithData(token, received_data);
+		dbServices.setTokenWithData(token, received_data);
 		res.json(null);
 	};
 
-	redisServices.getDataByToken(token, function(extracted_data) {
+	dbServices.getDataByToken(token, function(extracted_data) {
 		console.log(extracted_data);
-		if (null == extracted_data) redisServices.createToken(postCb);
+		if (null == extracted_data) dbServices.createToken(postCb);
 		else postCb(token);
 	});
 });
@@ -79,7 +72,7 @@ io.on('connection', function (socket) {
 	// client download: read files to string here then emit
 	function sendImage(file) {
 		if (file.contentType.indexOf('image') > -1) {
-			var instream = mongoServices.fileRead(file._id); // get directly from mongo
+			var instream = dbServices.fileRead(file._id); // get directly from mongo
 			var stringStream = concatStream({ encoding: "string" }, function(imageData) { // imageData is a string
 				sockets.forEach(function(eachSocket) {
 					eachSocket.emit('imageDownload', {
@@ -98,7 +91,7 @@ io.on('connection', function (socket) {
 
 	// client upload: socket stream for direct access with mongo server
 	socketStream(socket).on('imageUpload', function(instream, file) {
-		mongoServices.fileWrite(file, instream, function(err, id) { 
+		dbServices.fileWrite(file, instream, function(err, id) { 
 			if (!err) {
 				file._id = id;
 				sendImage(file);
@@ -107,7 +100,7 @@ io.on('connection', function (socket) {
 	});
 
 	// populate client with images
-	mongoServices.fileGet(function(imagefiles) {
+	dbServices.fileGet(function(imagefiles) {
 		imagefiles.forEach(function(file) {
 			sendImage(file);
 		});
@@ -115,7 +108,7 @@ io.on('connection', function (socket) {
 
 	socket.on('deleteFile', function(imageId) {
 		// remove from mongo);
-		mongoServices.fileDelete({_id: imageId});
+		dbServices.fileDelete({_id: imageId});
 	});
 
 	socket.on('disconnect', function (msg) {
@@ -128,21 +121,21 @@ io.on('connection', function (socket) {
 // user information
 app.post('/userVerify', function(req, res) {
 	var user = req.body;
-	mongoServices.userExists({'email': user.email}, user.password, function(username) {
+	dbServices.userExists({'email': user.email}, user.password, function(username) {
 		res.json(username);
 	});
 });
 
 app.post('/userSave', function(req, res) {
 	var user = req.body;
-	mongoServices.userSave({username: user.username, password: user.password, email: user.email}, function(success) {
+	dbServices.userSave({username: user.username, password: user.password, email: user.email}, function(success) {
 		res.json(success);
 	});
 });
 
 app.post('/userDelete', function(req, res) {
 	var user = req.body;
-	mongoServices.userDelete({'email': user.email}, user.password, function(removed) {
+	dbServices.userDelete({'email': user.email}, user.password, function(removed) {
 		res.json(removed);
 	});
 });

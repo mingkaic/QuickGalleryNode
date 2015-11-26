@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var sockets = require('../server').socketList;
+var sockets = require('../../server').socketList;
 
 // use sparingly
 // useful for preventing changes to externally passed objects (e.g. options)
@@ -56,7 +56,7 @@ function closeOrError() {
 		console.log('attempting reconnection: '+incrementingTimer);
 		attemptConnection(function(connected) {
 			if (true == connected) 
-				interval.clearInterval();
+				clearInterval(interval);
 		});
 		if (incrementingTimer < 120) {
 			incrementingTimer += 10;

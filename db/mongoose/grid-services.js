@@ -65,6 +65,7 @@ module.exports.exists = function (options, callback) {
 
 // optional options, but NOT callback callback
 var listFiles = module.exports.info = function (callback, options) {
+	console.log(arguments);
 	options = options || {}; // find all
 	grid.files.find(options).toArray(function(err, files) {
 		if (err) return callback(err);
